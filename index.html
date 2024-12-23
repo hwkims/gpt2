@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPT-2 with ONNX</title>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/onnxruntime-web.min.js"></script>
+</head>
+<body>
+    <h1>PICO GPT-2 with ONNX in Browser</h1>
+    <textarea id="input-text" rows="4" cols="50" placeholder="Type your prompt here..."></textarea><br><br>
+    <button onclick="generateText()">Generate</button>
+    
+    <h3>Generated Text:</h3>
+    <p id="generated-text"></p>
+
+    <script>
+        let session;
+        let tokenizer;
+
+        // 모델 로드 함수
+        async function loadModel() {
+            try {
+                // ONNX 모델 로드
+                session = await onnx.InferenceSession.create('https://huggingface.co/centaur31/gpt2-fp16-onnx/resolve/main/decoder_model.onnx');
+                console.log('ONNX Model Loaded');
+            } catch (err) {
+                console.error('Failed to load model', err);
+            }
+        }
+
+        // GPT-2 토크나이저 설정
+        // 실제로는 Hugging Face에서 제공하는 JavaScript 토크나이저를 활용할 수 있으나, 간단한 예시로 문자 기반 토큰화 사용
+        function simpleTokenizer(text) {
+            // 텍스트를 단어(혹은 문자) 단위로 나누어 간단히 토큰화 (실제로는 GPT-2에 맞는 BPE 방식 사용)
+            return text.split(' ').map(word => word.charCodeAt(0));  // 간단한 예시: 첫 문자의 코드 포인트
+        }
+
+        // 토큰을 텍스트로 변환 (단순화된 디토크나이징)
+        function detokenize(tokens) {
+            return tokens.map(token => String.fromCharCode(token)).join('');
+        }
+
+        // 텍스트 생성 함수
+        async function generateText() {
+            if (!session) {
+                alert("Model is not loaded yet!");
+                return;
+            }
+
+            const inputText = document.getElementById('input-text').value;
+            if (!inputText) {
+                alert("Please enter some text.");
+                return;
+            }
+
+            // 텍스트를 토큰화
+            const inputTokens = simpleTokenizer(inputText);  // 여기서는 단순한 문자 기반 토큰화 예시
+            const inputTensor = new onnx.Tensor(new Int32Array(inputTokens), 'int32', [1, inputTokens.length]);
+
+            // 모델 실행
+            try {
+                const output = await session.run([inputTensor]);
+
+                // 모델 결과 처리 (여기서는 예시로 가장 간단한 방식으로 처리)
+                const outputTokens = output.values().next().value.data;
+                const generatedText = detokenize(outputTokens);
+
+                // 결과 표시
+                document.getElementById('generated-text').innerText = generatedText;
+            } catch (err) {
+                console.error('Error during model inference:', err);
+            }
+        }
+
+        // 페이지 로드 시 모델 로드
+        loadModel();
+    </script>
+</body>
+</html>
