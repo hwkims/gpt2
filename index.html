@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KoGPT-NeoX Tiny Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        #chat-box {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        #messages {
+            max-height: 400px;
+            overflow-y: scroll;
+            margin-bottom: 20px;
+        }
+        .message {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            background-color: #f1f1f1;
+        }
+        .user {
+            background-color: #d1e7fd;
+            text-align: right;
+        }
+        .bot {
+            background-color: #f1f1f1;
+            text-align: left;
+        }
+        input[type="text"] {
+            width: 80%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-box">
+        <h2>KoGPT-NeoX Tiny Chatbot</h2>
+        <div id="messages">
+            <!-- Chat messages will appear here -->
+        </div>
+        <input type="text" id="user-input" placeholder="Type a message..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const apiToken = 'YOUR_HUGGINGFACE_API_TOKEN'; // Replace with your Hugging Face API token
+        const modelEndpoint = 'https://api-inference.huggingface.co/models/heegyu/kogpt-neox-tiny';
+
+        // Function to send a message to the model and get a response
+        async function sendMessage() {
+            const userInput = document.getElementById("user-input").value;
+
+            if (userInput.trim() === "") {
+                return; // Do nothing if the input is empty
+            }
+
+            // Display the user's message
+            displayMessage(userInput, 'user');
+            
+            // Clear the input field
+            document.getElementById("user-input").value = '';
+
+            // Call Hugging Face API to get a response
+            const response = await getModelResponse(userInput);
+
+            // Display the model's response
+            displayMessage(response, 'bot');
+        }
+
+        // Function to display messages in the chat box
+        function displayMessage(message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender);
+            messageElement.textContent = message;
+            document.getElementById("messages").appendChild(messageElement);
+            document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+        }
+
+        // Function to get the model's response from Hugging Face API
+        async function getModelResponse(message) {
+            const response = await fetch(modelEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${apiToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    inputs: message
+                })
+            });
+
+            const result = await response.json();
+            return result[0].generated_text; // Adjust depending on Hugging Face response structure
+        }
+    </script>
+</body>
+</html>
